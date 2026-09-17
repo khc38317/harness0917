@@ -4,7 +4,11 @@
       "Bash(xargs grep -l \"raw/meetings\")",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git config *)",
+      "Bash(git commit *)",
+      "PowerShell(Copy-Item *)",
+      "PowerShell(New-Item *)"
     ]
   }
 }
