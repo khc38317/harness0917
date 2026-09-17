@@ -227,88 +227,31 @@ SCHEMA.md (구조)
 
 ---
 
-## 🎯 3개 커맨드
+## 🎯 도구 & 커맨드
 
-### /ingest — 회의록 수집 및 처리
+### 📍 Stage 1: `/ingest` 스킬
+회의록 → decisions.md, actions.md, glossary.md 자동 생성  
+**상세 프로토콜**: 아래 "표준 회의록 처리 파이프라인" Stage 1 참고
 
-**역할**: wiki/meetings/ 원본 1건을 읽고 → 메타 파일 자동 갱신
+### 📍 Stage 2: `python scripts/lint_structure.py`
+메타 파일 기계검증 (포맷, 필드, ID, 출처 링크)  
+**상세 검증**: 아래 "표준 회의록 처리 파이프라인" Stage 2 참고
 
-**프로토콜**:
-1. **State 확인** (먼저!)
-   - wiki/meetings/index.md에서 마지막 D 번호 읽기
-   - wiki/meetings/index.md에서 마지막 A 번호 읽기
-
-2. **회의록 읽기**
-   - wiki/meetings/YYYY-MM-DD-*.md 전문 분석
-
-3. **추출**
-   - 결정 목록
-   - 액션아이템 목록
-   - 미결 사항
-   - 신규 용어
-
-4. **검증**
-   - 사용자에게 추출 결과 제시 ("이렇게 추출했는데 맞나요?")
-
-5. **생성/갱신**
-   - wiki/meetings/decisions.md 갱신
-   - wiki/meetings/actions.md 갱신
-   - wiki/meetings/glossary.md 신규 용어 추가
-   - wiki/meetings/index.md 갱신
-   - wiki/meetings/log.md append
-
-6. **commit**
-   - "ingest: YYYY-MM-DD 회의명"
-
-**사용 예시**:
-```
-/ingest wiki/meetings/2026-03-12-주간개발.md
-```
-
-자세한 프롬프트: **.claude/commands/ingest.md** 참고
+### 📍 Stage 3: `/skill_review` 스킬
+내용 검증 (회의록 ↔ wiki 일치도, 누락, 오분류)  
+**상세 검증**: 아래 "표준 회의록 처리 파이프라인" Stage 3 참고
 
 ---
 
-### /lint — 위키 건강도 검사
+### 📍 보조 커맨드
 
-**역할**: wiki/meetings/ 전체를 스캔하고 문제 플래그
+**`/lint`** — 위키 전체 건강도 검사
+- 출처 링크 누락, 기한 임박/초과 액션, 장기 비활동 액션 감지
+- 정기적으로 실행 (선택사항)
 
-**검사 항목**:
-- ✅ 출처 링크 누락 (SCHEMA.md 규칙 위반)
-- ⚠️ 기한 임박 액션 (3일 이내)
-- ❌ 기한 초과 액션
-- 🔄 30일 이상 상태 변경 없는 액션
-- 📌 미결 사항 중 Action 미배정 항목
-- [TBD] 추가 검사 항목
-
-**사용 예시**:
-```
-/lint
-```
-
-자세한 프롬프트: **.claude/commands/lint.md** 참고
-
----
-
-### /brief — 다음 회의 전 브리핑
-
-**역할**: 다음 회의 아젠다 준비용 브리핑 생성
-
-**출력 내용**:
-- 📍 즉시 확인할 사항 (오늘 기한 액션)
-- 🎯 진행 중인 액션 (담당/기한/진행률)
-- 💥 최근 번복된 결정
-- ❓ 미해결 질문 (지난 회의 미결)
-- 📌 추천 아젠다
-
-**사용 예시**:
-```
-/brief
-```
-
-→ 다음 회의 전날 또는 당일 아침 실행
-
-자세한 프롬프트: **.claude/commands/brief.md** 참고
+**`/brief`** — 다음 회의 전 브리핑
+- 즉시 확인 사항, 진행 중인 액션, 번복 결정, 미결 사항 제시
+- 회의 전날 또는 당일 아침 실행
 
 ---
 
@@ -317,27 +260,165 @@ SCHEMA.md (구조)
 ```
 1️⃣ 회의 진행
    ↓
-2️⃣ 회의록 원본을 wiki/meetings/ 저장
-   └─ 파일명: YYYY-MM-DD-제목.md
+2️⃣ 회의록 저장 (wiki/meetings/YYYY-MM-DD-제목.md)
    ↓
-3️⃣ /ingest 실행
-   ├─ LJM: 회의록 분석 → decisions.md, actions.md 갱신
-   ├─ 사람: 검토 → 피드백
-   ├─ LJM: 수정
-   └─ 사람: 승인 → commit
+3️⃣ 3단계 파이프라인 실행 (⬇️ 아래 상세 참고)
+   ├─ Stage 1: /ingest (메타 파일 생성)
+   ├─ Stage 2: lint_structure.py (기계검증)
+   ├─ Stage 3: /skill_review (컨텐츠 검증)
+   └─ 최종 commit
    ↓
-4️⃣ 메타 파일 갱신 완료
-   ├─ wiki/meetings/decisions.md 갱신
-   ├─ wiki/meetings/actions.md 갱신
-   ├─ wiki/meetings/glossary.md 갱신
-   └─ wiki/meetings/index.md 갱신
-   ↓
-5️⃣ 다음 회의 전
+4️⃣ 다음 회의 전
    └─ /brief 실행 → 아젠다 준비
    ↓
-6️⃣ (선택) 주기적
+5️⃣ (선택) 주기적
    └─ /lint 실행 → 건강도 체크
 ```
+
+→ **상세한 3단계 파이프라인**: 아래 "표준 회의록 처리 파이프라인" 섹션 참고
+
+---
+
+## 🚀 표준 회의록 처리 파이프라인 (3단계)
+
+회의록 기반 wiki를 생성 → 기계검증 → 컨텐츠 검증하는 **표준 워크플로우**입니다.
+
+### 📍 언제 사용하는가?
+
+- 새로운 회의록을 `wiki/meetings/YYYY-MM-DD-제목.md`에 저장했을 때
+- 회의록을 수정하고 메타 파일을 갱신해야 할 때
+
+### 🎯 순서 (필수!)
+
+**Stage 1 → Stage 2 → Stage 3 순서대로 실행**
+
+---
+
+### Stage 1️⃣ — `/ingest` 스킬 (위키 생성)
+
+**목적**: 회의록을 분석하여 decisions.md, actions.md, glossary.md 등 자동 생성/갱신
+
+**사용**:
+```bash
+/ingest wiki/meetings/YYYY-MM-DD-제목.md
+```
+
+**수행 내용**:
+- 회의록 전문 분석
+- 결정(D-XXXX) 추출
+- 액션(A-XXXX) 추출
+- 신규 용어 추가
+- index.md, log.md 갱신
+- **출처 링크([[YYYY-MM-DD]]) 자동 추가**
+
+**결과**:
+- ✅ wiki/meetings/decisions.md (갱신 또는 생성)
+- ✅ wiki/meetings/actions.md (갱신 또는 생성)
+- ✅ wiki/meetings/glossary.md (신규 용어만 추가)
+- ✅ wiki/meetings/index.md (ID 카운터 업데이트)
+- ✅ wiki/meetings/log.md (기록 추가)
+
+**주의사항**:
+- Stage 2, 3을 거쳐야 최종 확정 (이 단계는 임시 생성만)
+- index.md의 현재 D/A 번호를 먼저 읽고 +1부터 시작
+- 모든 항목에 출처 링크 필수
+
+---
+
+### Stage 2️⃣ — `python scripts/lint_structure.py` (기계검증)
+
+**목적**: 생성된 메타 파일의 포맷/구조 검증
+
+**사용**:
+```bash
+python scripts/lint_structure.py wiki/meetings/YYYY-MM-DD-제목.md
+```
+
+**검증 항목**:
+- ✅ Frontmatter 필수 필드 (title, date, state 등)
+- ✅ 필수 섹션 존재 (## 결정 내용, ## 액션 등)
+- ✅ 파일명 규칙 (D-XXXX.md, YYYY-MM-DD 형식)
+- ✅ ID 형식 (D-0001, A-0001 등)
+- ✅ 출처 링크 형식 ([[YYYY-MM-DD]] 정확성)
+- ✅ 필드 값 타입 (date, state 등)
+
+**결과**:
+- 오류(❌): 반드시 수정 후 Stage 3으로 진행
+- 경고(⚠️): 권장하지만 무시 가능 (하지만 권장 안 함)
+
+**주의사항**:
+- Frontmatter가 `---`로 시작/종료하는지 확인
+- 모든 필수 섹션이 ## 로 시작하는지 확인
+- ID 중복 체크 (index.md와 비교)
+
+---
+
+### Stage 3️⃣ — `/skill_review` 스킬 (컨텐츠 검증)
+
+**목적**: 회의록과 메타 파일의 **내용 일치도** 검증 (LJM 검증)
+
+**사용**:
+```bash
+/skill_review wiki/meetings/YYYY-MM-DD-제목.md
+```
+
+**검증 항목**:
+- ✅ decisions.md ↔ 회의록 일치도
+- ✅ actions.md ↔ 회의록 일치도
+- ✅ glossary.md ↔ 회의록 일치도
+- ✅ 출처 링크 정확성 ([[YYYY-MM-DD]] 링크 유효성)
+- ✅ 누락 감지 (회의에서 나왔지만 wiki에 없는 항목)
+- ✅ 잘못된 분류 감지 (결정인데 액션으로 분류됨 등)
+- ✅ 상태 추적 (조용한 사라짐 감지)
+
+**결과**:
+- 🟢 정상: 모든 검증 통과
+- 🔴 오류: 수정 후 재실행
+- 🟡 경고: 검토 후 적절히 처리
+
+**주의사항**:
+- Stage 2 (기계검증)를 먼저 완료해야 함
+- 누락이나 불일치가 발견되면 decisions.md, actions.md 수정
+- 출처 링크 오류 발견 시 즉시 수정
+
+---
+
+### ✅ 최종 Commit
+
+**모든 Stage 통과 후** git commit:
+
+```bash
+git add wiki/meetings/
+git commit -m "ingest: YYYY-MM-DD 회의명 (SK1, SK3 검증 완료)"
+```
+
+**Commit 메시지 규칙**:
+- 형식: `ingest: YYYY-MM-DD 회의명`
+- 선택: `(SK1, SK3 검증 완료)` 추가 가능
+- SK1 = Stage 1 (/ingest)
+- SK2 = Stage 2 (lint_structure.py)
+- SK3 = Stage 3 (/skill_review)
+
+---
+
+### 💡 트러블슈팅
+
+| 문제 | 원인 | 해결책 |
+|---|---|---|
+| Stage 2에서 오류 | Frontmatter 오류 또는 필드 누락 | SCHEMA.md 확인 후 수정 |
+| Stage 3에서 누락 감지 | ingest 불완전 | Stage 1 재실행 |
+| 출처 링크 오류 | 회의록 파일명과 링크 불일치 | 파일명 및 링크 동기화 |
+| ID 중복 | index.md 업데이트 안 됨 | index.md 마지막 번호 수정 |
+
+---
+
+### 🎯 핵심 규칙
+
+1. **순서 필수**: Stage 1 → 2 → 3 순서대로 진행
+2. **Stage 2 오류는 필수 수정**: 진행 불가
+3. **Stage 3 경고는 권장 수정**: 무시하면 안 됨
+4. **모든 Stage 통과 후에만 commit**: 중간 커밋 금지
+5. **출처 링크는 100% 필수**: 누락 절대 금지
 
 ---
 
