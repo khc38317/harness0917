@@ -39,10 +39,14 @@ wiki_harness/
 │     └─ glossary.md            # 용어/시스템명 참고
 │
 └─ .claude/
-   └─ commands/           # LLM 커맨드 정의
-      ├─ ingest.md        # /ingest 프롬프트
-      ├─ lint.md          # /lint 프롬프트
-      └─ brief.md         # /brief 프롬프트
+   ├─ commands/           # 간단한 커맨드 프롬프트
+   │  ├─ ingest.md        # /ingest 프롬프트
+   │  ├─ lint.md          # /lint 프롬프트
+   │  └─ brief.md         # /brief 프롬프트
+   │
+   └─ skills/             # 복잡한 절차 스킬 (frontmatter + 상세 가이드)
+      └─ review/
+         └─ skill.md      # /review 스킬
 ```
 
 ---
@@ -86,6 +90,55 @@ wiki_harness/
 - A: A-0001, A-0002, ... (절대 뒤로 갈 수 없음)
 
 → index.md의 "현재 상태"를 항상 읽고 +1부터 시작
+
+---
+
+## 🛠️ 커맨드 vs 스킬
+
+Wiki Harness는 **커맨드**와 **스킬**을 역할에 따라 구분합니다.
+
+### Commands (.claude/commands/)
+
+**특징**: 간단한 프롬프트 (plain markdown)
+
+**포함**:
+- `/ingest`: 회의록 분석 및 메타 파일 생성
+- `/lint`: wiki 건강도 검사
+- `/brief`: 회의 전 브리핑 생성
+
+**사용 시기**: 단순한 입력 → 출력 프로세스
+
+**형식**: 일반 `.md` 파일 (frontmatter 없음)
+
+### Skills (.claude/skills/)
+
+**특징**: 복잡한 절차를 체계화한 가이드 (frontmatter + 상세 문서)
+
+**포함**:
+- `/review`: 컨텐츠 검증 (회의록 vs wiki 비교)
+
+**사용 시기**: 여러 단계, 선택지, 체크리스트가 필요한 프로세스
+
+**형식**: frontmatter가 있는 `skill.md` 파일
+
+```yaml
+---
+name: review
+description: "Wiki 컨텐츠 검증..."
+---
+
+# 실제 내용
+```
+
+### 구분 기준
+
+| 구분 | Commands | Skills |
+|---|---|---|
+| 복잡도 | 낮음 (단순) | 높음 (다단계) |
+| 형식 | plain .md | skill.md + frontmatter |
+| 선택지 | 거의 없음 | 여러 선택지/옵션 |
+| 체크리스트 | 짧음 | 상세함 |
+| 사용 빈도 | 자주 | 필요시 |
 
 ---
 
