@@ -1,0 +1,35 @@
+# Obsidian Ignore Rules
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Node / Build
+node_modules/
+dist/
+build/
+
+# Temporary
+*.tmp
+*.bak
+*.backup
+
+# 제외할 로그 (선택)
+# log.md는 포함하고 싶을 수 있으므로 제외
